@@ -43,7 +43,7 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(409, "User with this email or username already exists.");
   }
 
-  console.log(req.files);
+  
 
   const avatarLocalPath = req.files?.avatar[0]?.path;
   // const coverImageLocalPath = req.files?.coverImage[0]?.path
@@ -145,7 +145,7 @@ const logoutUser = asyncHandler(async (req, res) => {
   User.findByIdAndUpdate(
     req.user._id,
     {
-      $set: { refreshToken: undefined },
+      $unset: { refreshToken: 1 },
     },
     {
       new: true,
@@ -201,7 +201,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       .cookie("accessToken", accessToken, options)
       .cookie("refreshToken", newRefreshToken, options)
       .json(
-        new ApiResponse(200, { accessToken, refreshToken: newRefreshToken })
+        new ApiResponse(200, { accessToken, refreshToken: newRefreshToken }, "Token Refreshed Successfully")
       );
   } catch (error) {
     throw new ApiError(401, error?.message || "Invalid Refresh Token");
@@ -279,6 +279,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     { new: true }
   ).select("-password");
 
+
   return res
     .status(200)
     .json(new ApiResponse(200, user, "Avatar Updated successfully"));
@@ -306,6 +307,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     },
     { new: true }
   ).select("-password");
+
 
   return res
     .status(200)
@@ -371,6 +373,14 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
       },
     },
   ]);
+
+  if (!channel?.length) {
+    throw new ApiError(404, "Channel does not exists")
+}
+
+  res
+  .status(200)
+  .json( new ApiResponse(200, channel[0], "User Channel Fetched Successfully"))
 });
 
 const getWatchHistory = asyncHandler(async(req, res)=>{
