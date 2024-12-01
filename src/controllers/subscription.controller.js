@@ -9,7 +9,12 @@ const toggleSubscription = asyncHandler(async (req, res) => {
   const { channelId } = req.params;
   // TODO: toggle subscription
 
-  const subscriber = req.user._id;
+  const subscriber = await User.findById(req.user._id).select("_id");
+  const channel = await User.findById(channelId).select("_id")
+
+  if(!subscriber || !channel){
+    throw new ApiError(400, "no such channel or user exists")
+  }
 
   const isAlreadySubscribed = await Subscription.aggregate([
     {
@@ -35,12 +40,20 @@ const toggleSubscription = asyncHandler(async (req, res) => {
       subscriber,
     });
 
+    if(!subscription){
+      throw new ApiError(400, "Error occurred while subscribing")
+    }
+
     res
       .status(200)
       .json(new ApiResponse(200, subscription, "Subscribed Successfully"));
   } else {
-    await Subscription.findByIdAndDelete(isAlreadySubscribed)
+   const unsubscribe = await Subscription.findByIdAndDelete(isAlreadySubscribed)
 
+
+   if(!unsubscribe){
+    throw new ApiError(400, "Error occurred while unsubscribing")
+   }
     res
     .status(200)
     .json(new ApiResponse(200, {}, "Unsubscribed Successfully"))
@@ -50,6 +63,12 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 // controller to return subscriber list of a channel
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
   const { channelId } = req.params;
+
+  const channel = await User.findById(channelId).select("_id")
+
+  if(!channel){
+    throw new ApiError(200, "No such channel found")
+  }
 
   const subscribers = await Subscription.aggregate([
     {
@@ -64,6 +83,10 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
       }
     }
   ])
+
+  if(!subscribers){
+    res.json(new ApiResponse(200,{},"No subscribers found"))
+  }
   
   res
 .status(200)
@@ -76,16 +99,16 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
 const getSubscribedChannels = asyncHandler(async (req, res) => {
   const { subscriberId } = req.params;
 
+  const subscriber = await User.findById(subscriberId).select("_id")
+
+  if(!subscriber){
+    throw new ApiError(400, "No such channel found")
+  }
+
   const subscribedTo = await Subscription.aggregate([
     {
       $match: {
         subscriber: new mongoose.Types.ObjectId(subscriberId)
-      }
-    },
-    {
-      $addFields: {
-        subscribedTo : "$subscriber"
-        
       }
     },
     {
