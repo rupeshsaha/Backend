@@ -90,7 +90,7 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, createdUser, "User registered successfully."));
 });
 
-const loginUser = asyncHandler(async (req, res) => {
+const loginUser = asyncHandler(async (req, res, err) => {
   const { email, username, password } = req.body;
 
   if (!(username || email)) {
@@ -122,6 +122,7 @@ const loginUser = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
+     sameSite: "Lax"
   };
 
   return res
@@ -155,6 +156,7 @@ const logoutUser = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
+    sameSite: "None"
   };
 
   return res
@@ -382,6 +384,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   .status(200)
   .json( new ApiResponse(200, channel[0], "User Channel Fetched Successfully"))
 });
+
 
 const getWatchHistory = asyncHandler(async(req, res)=>{
   const user = await User.aggregate([

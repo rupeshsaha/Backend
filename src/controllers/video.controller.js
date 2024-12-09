@@ -34,7 +34,9 @@ const getAllVideos = asyncHandler(async (req, res) => {
   const videos = await Video.find(filter)
     .sort({ [sortBy]: sortOrder })
     .skip((pageNum - 1) * limitNum) // Skip documents for pagination
-    .limit(limitNum); // Limit number of documents per page
+    .limit(limitNum)
+    .populate("owner")
+    ; // Limit number of documents per page
 
   // Count total documents matching the filter
   const totalVideos = await Video.countDocuments(filter);
@@ -89,7 +91,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
   }
 
   const owner = await User.findById(req.user._id).select(
-    "_id avatar username fullname"
+    "fullname"
   );
 
   const { duration } = videoFile;
